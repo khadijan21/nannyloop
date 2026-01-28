@@ -1,11 +1,107 @@
+#3 backend/templates/index.html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>NannyLoop</title>
+    <meta charset="UTF-8">
+    <title>NannyLoop</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+        }
+        .box {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        input, select, textarea, button {
+            width: 100%;
+            padding: 8px;
+            margin-top: 8px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .log {
+            border-bottom: 1px solid #ddd;
+            padding: 8px 0;
+        }
+    </style>
 </head>
 <body>
-  <h1>NannyLoop is running!</h1>
-  <p>If you can see this, Flask is rendering templates correctly.</p>
+
+<h1>NannyLoop Dashboard</h1>
+
+<div class="box">
+    <h2>Add Child</h2>
+    <form action="/add_child" method="post">
+        <input type="text" name="name" placeholder="Child name" required>
+        <input type="text" name="dob" placeholder="Date of Birth (e.g. 12/03/2022)" required>
+        <button type="submit">Add Child</button>
+    </form>
+</div>
+
+<div class="box">
+    <h2>Add Log Entry</h2>
+    <form action="/add_log" method="post">
+        <select name="child_id" required {% if not children %}disabled{% endif %}>
+            {% if children %}
+              {% for child in children %}
+                <option value="{{ child.id }}">{{ child.name }}</option>
+              {% endfor %}
+            {% else %}
+              <option value="">Add a child first</option>
+            {% endif %}
+          </select>
+
+          {% if not children %}
+            <p style="color:#b00020; margin-top:10px;">
+              Add a child before adding log entries.
+            </p>
+          {% endif %}
+
+          <button type="submit" {% if not children %}disabled style="background:#999; cursor:not-allowed;"{% endif %}>
+            Add Log
+          </button>
+
+
+        <input type="text" name="carer" placeholder="Carer name" required>
+
+        <select name="category" required>
+            <option value="Feeding">Feeding</option>
+            <option value="Sleep">Sleep</option>
+            <option value="Behaviour">Behaviour</option>
+            <option value="Medical">Medical</option>
+        </select>
+
+        <textarea name="notes" placeholder="Notes..." required></textarea>
+
+        <button type="submit">Add Log</button>
+    </form>
+</div>
+
+<div class="box">
+    <h2>Recent Logs</h2>
+    {% for log in logs %}
+        <div class="log">
+            <strong>{{ log.child.name }}</strong> — {{ log.category }}<br>
+            Carer: {{ log.carer_name }}<br>
+            {{ log.notes }}<br>
+            <small>{{ log.timestamp }}</small>
+        </div>
+    {% endfor %}
+</div>
+
 </body>
 </html>
