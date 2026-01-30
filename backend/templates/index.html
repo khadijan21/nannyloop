@@ -1,31 +1,40 @@
-# backend/templates/index.html
+<!-- backend/templates/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>NannyLoop</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
-    .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom: 18px; }
+    .topbar { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 18px; gap: 16px; }
     .pill { background:white; padding:10px 14px; border-radius: 8px; }
     .box { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
     input, select, textarea, button { width: 100%; padding: 8px; margin-top: 8px; box-sizing: border-box; }
-    button { background: #4CAF50; color: white; border: 0; cursor: pointer; }
-    button:hover { background: #45a049; }
+    button { background: #e643e6c9; color: white; border: 0; cursor: pointer; }
+    button:hover { background: #e643e6c9; }
     .log { border-bottom: 1px solid #ddd; padding: 8px 0; }
     .msg { padding: 10px; border-radius: 8px; margin-bottom: 12px; background: #fff8d6; }
     .muted { color:#666; font-size: 13px; }
     a { color:#333; }
+    ul { margin: 10px 0 0 18px; }
   </style>
 </head>
-<body>
 
+<body>
   <div class="topbar">
-    <h1 style="margin:0;">NannyLoop Dashboard</h1>
+    <div>
+      <h1 style="margin:0;">NannyLoop Dashboard</h1>
+      <div class="muted" style="margin-top:6px;">
+        Household logs and daily updates
+      </div>
+    </div>
+
     <div class="pill">
       <div class="muted">Logged in as</div>
       <div><strong>{{ current_user.email }}</strong> ({{ current_user.role }})</div>
-      <div style="margin-top:6px;"><a href="/logout">Logout</a></div>
+      <div style="margin-top:8px;">
+        <a href="{{ url_for('logout') }}" style="text-decoration:none;">Logout</a>
+      </div>
     </div>
   </div>
 
@@ -38,36 +47,41 @@
   {% endwith %}
 
   {% if current_user.role == "parent" %}
-  <div class="box">
-    <h2>Create Carer Invite Code</h2>
-    <form action="/create_invite" method="post">
-      <input type="text" name="hours" placeholder="Optional expiry hours (default 48)">
-      <button type="submit">Create Invite</button>
-    </form>
+    <div class="box">
+      <h2>Create Carer Invite Code</h2>
+      <div class="muted">Share an unused code with your carer so they can register.</div>
 
-    {% if active_invites %}
-      <div style="margin-top:14px;">
-        <strong>Latest invites</strong>
-        <div class="muted">Share an unused code with your carer so they can register.</div>
-        <ul>
-          {% for inv in active_invites %}
-            <li>
-              <strong>{{ inv.code }}</strong>
-              <span class="muted">expires {{ inv.expires_at }}</span>
-              {% if inv.used_at %}
-                <span class="muted">used</span>
-              {% endif %}
-            </li>
-          {% endfor %}
-        </ul>
-      </div>
-    {% endif %}
-  </div>
+      <form action="{{ url_for('create_invite') }}" method="post">
+        <input type="text" name="hours" placeholder="Optional expiry hours (leave blank for no expiry)">
+        <button type="submit">Create Invite</button>
+      </form>
+
+      {% if active_invites %}
+        <div style="margin-top:14px;">
+          <strong>Latest invites</strong>
+          <ul>
+            {% for inv in active_invites %}
+              <li>
+                <strong>{{ inv.code }}</strong>
+                {% if inv.expires_at %}
+                  <span class="muted"> — expires {{ inv.expires_at }}</span>
+                {% else %}
+                  <span class="muted"> — no expiry</span>
+                {% endif %}
+                {% if inv.used_at %}
+                  <span class="muted"> — used</span>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+    </div>
   {% endif %}
 
   <div class="box">
     <h2>Add Child</h2>
-    <form action="/add_child" method="post">
+    <form action="{{ url_for('add_child') }}" method="post">
       <input type="text" name="name" placeholder="Child name" required>
       <input type="text" name="dob" placeholder="Date of Birth (eg 12/03/2022)" required>
       <button type="submit">Add Child</button>
@@ -80,7 +94,7 @@
     {% if children|length == 0 %}
       <div class="muted">Add a child first, then you can create logs.</div>
     {% else %}
-      <form action="/add_log" method="post">
+      <form action="{{ url_for('add_log') }}" method="post">
         <select name="child_id" required>
           {% for child in children %}
             <option value="{{ child.id }}">{{ child.name }}</option>
@@ -90,10 +104,11 @@
         <input type="text" name="carer" placeholder="Carer name" required>
 
         <select name="category" required>
-          <option value="Feeding">Feeding</option>
+          <option value="Diet">Diet</option>
           <option value="Sleep">Sleep</option>
           <option value="Behaviour">Behaviour</option>
           <option value="Medical">Medical</option>
+          <option value="Other">Other</option>
         </select>
 
         <textarea name="notes" placeholder="Notes..." required></textarea>
@@ -104,6 +119,7 @@
 
   <div class="box">
     <h2>Recent Logs</h2>
+
     {% if logs|length == 0 %}
       <div class="muted">No logs yet.</div>
     {% else %}
@@ -117,7 +133,5 @@
       {% endfor %}
     {% endif %}
   </div>
-
 </body>
 </html>
-
