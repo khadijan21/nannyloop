@@ -1,107 +1,123 @@
-#3 backend/templates/index.html
+# backend/templates/index.html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>NannyLoop</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-            background-color: #f5f5f5;
-        }
-        h1 {
-            color: #333;
-        }
-        .box {
-            background: white;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-        }
-        input, select, textarea, button {
-            width: 100%;
-            padding: 8px;
-            margin-top: 8px;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        .log {
-            border-bottom: 1px solid #ddd;
-            padding: 8px 0;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>NannyLoop</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom: 18px; }
+    .pill { background:white; padding:10px 14px; border-radius: 8px; }
+    .box { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
+    input, select, textarea, button { width: 100%; padding: 8px; margin-top: 8px; box-sizing: border-box; }
+    button { background: #4CAF50; color: white; border: 0; cursor: pointer; }
+    button:hover { background: #45a049; }
+    .log { border-bottom: 1px solid #ddd; padding: 8px 0; }
+    .msg { padding: 10px; border-radius: 8px; margin-bottom: 12px; background: #fff8d6; }
+    .muted { color:#666; font-size: 13px; }
+    a { color:#333; }
+  </style>
 </head>
 <body>
 
-<h1>NannyLoop Dashboard</h1>
+  <div class="topbar">
+    <h1 style="margin:0;">NannyLoop Dashboard</h1>
+    <div class="pill">
+      <div class="muted">Logged in as</div>
+      <div><strong>{{ current_user.email }}</strong> ({{ current_user.role }})</div>
+      <div style="margin-top:6px;"><a href="/logout">Logout</a></div>
+    </div>
+  </div>
 
-<div class="box">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="msg">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  {% if current_user.role == "parent" %}
+  <div class="box">
+    <h2>Create Carer Invite Code</h2>
+    <form action="/create_invite" method="post">
+      <input type="text" name="hours" placeholder="Optional expiry hours (default 48)">
+      <button type="submit">Create Invite</button>
+    </form>
+
+    {% if active_invites %}
+      <div style="margin-top:14px;">
+        <strong>Latest invites</strong>
+        <div class="muted">Share an unused code with your carer so they can register.</div>
+        <ul>
+          {% for inv in active_invites %}
+            <li>
+              <strong>{{ inv.code }}</strong>
+              <span class="muted">expires {{ inv.expires_at }}</span>
+              {% if inv.used_at %}
+                <span class="muted">used</span>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="box">
     <h2>Add Child</h2>
     <form action="/add_child" method="post">
-        <input type="text" name="name" placeholder="Child name" required>
-        <input type="text" name="dob" placeholder="Date of Birth (e.g. 12/03/2022)" required>
-        <button type="submit">Add Child</button>
+      <input type="text" name="name" placeholder="Child name" required>
+      <input type="text" name="dob" placeholder="Date of Birth (eg 12/03/2022)" required>
+      <button type="submit">Add Child</button>
     </form>
-</div>
+  </div>
 
-<div class="box">
+  <div class="box">
     <h2>Add Log Entry</h2>
-    <form action="/add_log" method="post">
-        <select name="child_id" required {% if not children %}disabled{% endif %}>
-            {% if children %}
-              {% for child in children %}
-                <option value="{{ child.id }}">{{ child.name }}</option>
-              {% endfor %}
-            {% else %}
-              <option value="">Add a child first</option>
-            {% endif %}
-          </select>
 
-          {% if not children %}
-            <p style="color:#b00020; margin-top:10px;">
-              Add a child before adding log entries.
-            </p>
-          {% endif %}
-
-          <button type="submit" {% if not children %}disabled style="background:#999; cursor:not-allowed;"{% endif %}>
-            Add Log
-          </button>
-
+    {% if children|length == 0 %}
+      <div class="muted">Add a child first, then you can create logs.</div>
+    {% else %}
+      <form action="/add_log" method="post">
+        <select name="child_id" required>
+          {% for child in children %}
+            <option value="{{ child.id }}">{{ child.name }}</option>
+          {% endfor %}
+        </select>
 
         <input type="text" name="carer" placeholder="Carer name" required>
 
         <select name="category" required>
-            <option value="Feeding">Feeding</option>
-            <option value="Sleep">Sleep</option>
-            <option value="Behaviour">Behaviour</option>
-            <option value="Medical">Medical</option>
+          <option value="Feeding">Feeding</option>
+          <option value="Sleep">Sleep</option>
+          <option value="Behaviour">Behaviour</option>
+          <option value="Medical">Medical</option>
         </select>
 
         <textarea name="notes" placeholder="Notes..." required></textarea>
-
         <button type="submit">Add Log</button>
-    </form>
-</div>
+      </form>
+    {% endif %}
+  </div>
 
-<div class="box">
+  <div class="box">
     <h2>Recent Logs</h2>
-    {% for log in logs %}
+    {% if logs|length == 0 %}
+      <div class="muted">No logs yet.</div>
+    {% else %}
+      {% for log in logs %}
         <div class="log">
-            <strong>{{ log.child.name }}</strong> — {{ log.category }}<br>
-            Carer: {{ log.carer_name }}<br>
-            {{ log.notes }}<br>
-            <small>{{ log.timestamp }}</small>
+          <strong>{{ log.child.name }}</strong> — {{ log.category }}<br>
+          Carer: {{ log.carer_name }}<br>
+          {{ log.notes }}<br>
+          <small class="muted">{{ log.timestamp }}</small>
         </div>
-    {% endfor %}
-</div>
+      {% endfor %}
+    {% endif %}
+  </div>
 
 </body>
 </html>
+
