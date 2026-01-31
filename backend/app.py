@@ -1,11 +1,14 @@
 # backend/app.py
 import os
 from functools import wraps
+from datetime import datetime, timedelta, timezone
 
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 
 from backend.models import db, User, Household, Child, LogEntry, InviteCode
+
+
 
 
 app = Flask(__name__)
@@ -23,7 +26,7 @@ login_manager.init_app(app)
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))   
 
 
 def role_required(role_name: str):
@@ -74,6 +77,7 @@ def dashboard():
         logs=logs,
         active_invites=active_invites
     )
+
 
 
 @app.route("/register-parent", methods=["GET", "POST"])
@@ -206,17 +210,110 @@ def add_log():
         flash("Invalid child selected.", "error")
         return redirect(url_for("dashboard"))
 
+    
+
+    when_raw = request.form.get("when", "").strip()
+    ts = None
+    if when_raw:
+        # datetime-local comes as "YYYY-MM-DDTHH:MM"
+        ts = datetime.strptime(when_raw, "%Y-%m-%dT%H:%M")
+
     log = LogEntry(
         household_id=current_user.household_id,
         child_id=child_id,
         carer_name=carer_name,
         category=category,
-        notes=notes
+        notes=notes,
+        timestamp=ts if ts else datetime.utcnow()
     )
+
     db.session.add(log)
     db.session.commit()
 
     return redirect(url_for("dashboard"))
+
+@app.route("/timetable")
+@login_required
+def timetable():
+    # all children in THIS household
+    children = Child.query.filter_by(household_id=current_user.household_id).all()
+    if not children:
+        flash("Add a child first, then you can view the timetable.", "error")
+        return redirect(url_for("dashboard"))
+
+    # pick a child (from querystring) or default to the first one
+    selected_child_id = request.args.get("child_id", type=int)
+    if selected_child_id is None:
+        selected_child_id = children[0].id
+
+    # find the chosen child, but only if it belongs to this household
+    selected_child = Child.query.filter_by(
+        id=selected_child_id,
+        household_id=current_user.household_id
+    ).first()
+
+    if not selected_child:
+        flash("Invalid child selected.", "error")
+        return redirect(url_for("dashboard"))
+
+    # week start = Monday
+    week_str = request.args.get("week")  # "YYYY-MM-DD"
+    if week_str:
+        start_of_week = datetime.strptime(week_str, "%Y-%m-%d")
+    else:
+        today = datetime.now(timezone.utc)
+        start_of_week = today - timedelta(days=today.weekday())
+        start_of_week = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    # ensure midnight
+    start_of_week = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_of_week = start_of_week + timedelta(days=7)
+
+    prev_week = start_of_week - timedelta(days=7)
+    next_week = start_of_week + timedelta(days=7)
+
+
+    # 2 hour slots
+    hours = list(range(6, 22, 2))
+
+    # fetch logs for this week + this child + this household
+    logs = (
+        LogEntry.query
+        .filter_by(household_id=current_user.household_id, child_id=selected_child.id)
+        .filter(LogEntry.timestamp >= start_of_week, LogEntry.timestamp < end_of_week)
+        .order_by(LogEntry.timestamp.asc())
+        .all()
+    )
+
+    # build grid: key = (day_index 0-6, hour_slot)
+    grid = {}
+    for log in logs:
+        dt = log.timestamp
+        day_index = (dt.date() - start_of_week.date()).days
+        if day_index < 0 or day_index > 6:
+            continue
+
+        hour_slot = (dt.hour // 2) * 2  # snaps time into 2-hour block
+        if hour_slot < 6:
+            hour_slot = 6
+        if hour_slot > 20:
+            hour_slot = 20
+
+        grid.setdefault((day_index, hour_slot), []).append(log)
+
+    return render_template(
+        "timetable.html",
+        children=children,
+        selected_child_id=selected_child.id,
+        start_of_week=start_of_week,
+        end_of_week=end_of_week,
+        hours=hours,
+        grid=grid,
+        timedelta=timedelta,
+        prev_week=prev_week,
+        next_week=next_week
+    )
+
 
 
 if __name__ == "__main__":

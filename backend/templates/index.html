@@ -1,4 +1,4 @@
-<!-- backend/templates/index.html -->
+<!  -- backend/templates/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -33,7 +33,9 @@
       <div class="muted">Logged in as</div>
       <div><strong>{{ current_user.email }}</strong> ({{ current_user.role }})</div>
       <div style="margin-top:8px;">
+        <a href="{{ url_for('timetable') }}" style="margin-right:12px; text-decoration:none;">Timetable</a>
         <a href="{{ url_for('logout') }}" style="text-decoration:none;">Logout</a>
+
       </div>
     </div>
   </div>
@@ -102,6 +104,9 @@
         </select>
 
         <input type="text" name="carer" placeholder="Carer name" required>
+        <input type="datetime-local" name="when">
+        <div class="muted">Leave blank to log it as “now”.</div>
+
 
         <select name="category" required>
           <option value="Diet">Diet</option>

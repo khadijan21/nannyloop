@@ -1,0 +1,122 @@
+<!-- backend/templates/timetable.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NannyLoop - Weekly Timetable</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+    .pill { background:white; padding:10px 14px; border-radius: 8px; }
+    a { color:#333; text-decoration:none; }
+
+    .controls { background:white; padding:14px; border-radius:10px; margin-bottom:18px; }
+    select, button { padding:10px; width:100%; margin-top:10px; }
+
+    .week-nav {
+        margin-bottom: 16px;
+        position: relative;
+        z-index: 2;
+    }
+
+        .controls {
+        position: relative;
+        z-index: 1;
+        }
+
+        .week-nav a {
+        display: inline-block;
+        padding: 8px 14px;
+        border-radius: 8px;
+        background: #f1f1f1;
+        margin-right: 6px;
+        }
+
+        .week-nav a.active {
+        background: #e643e6c9;
+        color: white;
+    }
+
+
+    table { width:100%; border-collapse: collapse; background:white; border-radius: 10px; overflow:hidden; }
+    th, td { border:1px solid #eee; padding:10px; vertical-align: top; }
+    th { background:#21b11c9c; text-align:left; }
+    .timecell { width:90px; font-weight:bold; background:#fafafa; }
+    .entry { background:#21b11c9c; padding:8px; border-radius:8px; margin-bottom:8px; }
+    .muted { color:#c9168db4; font-size: 12px; }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div>
+      <h1 style="margin:0;">Weekly Timetable</h1>
+      <div class="muted">Week starting: {{ start_of_week.strftime("%d %b %Y") }}</div>
+    </div>
+    <div class="pill">
+      <div class="muted">Logged in as</div>
+      <div><strong>{{ current_user.email }}</strong> ({{ current_user.role }})</div>
+      <div style="margin-top:6px;"><a href="{{ url_for('dashboard') }}">Dashboard</a> · <a href="{{ url_for('logout') }}">Logout</a></div>
+    </div>
+  </div>
+    <div class="week-nav">
+        <a href="{{ url_for('timetable', child_id=selected_child_id, week=prev_week.strftime('%Y-%m-%d')) }}"> Previous week</a>
+          <a class="active" href="{{ url_for('timetable', child_id=selected_child_id) }}">
+                This week
+          </a>
+
+         <a href="{{ url_for('timetable', child_id=selected_child_id, week=next_week.strftime('%Y-%m-%d')) }}">
+                Next week 
+         </a>
+
+        
+    </div>
+
+
+
+  <div class="controls">
+    <form method="get" action="/timetable">
+     
+      <label class="muted">Select child</label>
+      <input type="hidden" name="week" value="{{ start_of_week.strftime('%Y-%m-%d') }}">
+      
+      <select name="child_id">
+        {% for c in children %}
+          <option value="{{ c.id }}" {% if c.id == selected_child_id %}selected{% endif %}>
+            {{ c.name }}
+          </option>
+        {% endfor %}
+      </select>
+      <button type="submit">View timetable</button>
+    </form>
+  </div>
+
+  <table>
+    <tr>
+      <th class="timecell">Time</th>
+      {% for d in range(7) %}
+        <th>{{ (start_of_week + timedelta(days=d)).strftime("%a %d") }}</th>
+      {% endfor %}
+    </tr>
+
+    {% for hour in hours %}
+      <tr>
+        <td class="timecell">{{ "%02d:00"|format(hour) }}</td>
+        {% for d in range(7) %}
+          <td>
+            {% set cell = grid.get((d, hour), []) %}
+            {% for log in cell %}
+              <div class="entry">
+                <strong>{{ log.category }}</strong>
+                <div class="muted">{{ log.carer_name }} · {{ log.timestamp.strftime("%H:%M") }}</div>
+                <div>{{ log.notes }}</div>
+              </div>
+            {% endfor %}
+          </td>
+        {% endfor %}
+      </tr>
+    {% endfor %}
+  </table>
+
+</body>
+</html>
