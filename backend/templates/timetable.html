@@ -10,40 +10,29 @@
     .pill { background:white; padding:10px 14px; border-radius: 8px; }
     a { color:#333; text-decoration:none; }
 
+    .week-nav { margin-bottom: 14px; }
+    .week-nav a { display:inline-block; padding:8px 14px; border-radius:8px; background:#f1f1f1; margin-right:6px; }
+    .week-nav a.active { background:#e643e6c9; color:white; }
+
     .controls { background:white; padding:14px; border-radius:10px; margin-bottom:18px; }
-    select, button { padding:10px; width:100%; margin-top:10px; }
-
-    .week-nav {
-        margin-bottom: 16px;
-        position: relative;
-        z-index: 2;
-    }
-
-        .controls {
-        position: relative;
-        z-index: 1;
-        }
-
-        .week-nav a {
-        display: inline-block;
-        padding: 8px 14px;
-        border-radius: 8px;
-        background: #f1f1f1;
-        margin-right: 6px;
-        }
-
-        .week-nav a.active {
-        background: #e643e6c9;
-        color: white;
-    }
-
+    select, button, input, textarea { padding:10px; width:100%; margin-top:10px; box-sizing:border-box; }
+    textarea { min-height: 70px; }
 
     table { width:100%; border-collapse: collapse; background:white; border-radius: 10px; overflow:hidden; }
     th, td { border:1px solid #eee; padding:10px; vertical-align: top; }
     th { background:#21b11c9c; text-align:left; }
     .timecell { width:90px; font-weight:bold; background:#fafafa; }
-    .entry { background:#21b11c9c; padding:8px; border-radius:8px; margin-bottom:8px; }
-    .muted { color:#c9168db4; font-size: 12px; }
+
+    .entry { padding:8px; border-radius:8px; margin-bottom:8px; }
+    .muted { color:#666; font-size: 12px; }
+
+    .cat-Diet { background:#bff3bf; }
+    .cat-Sleep { background:#c7d7ff; }
+    .cat-Behaviour { background:#ffe3b5; }
+    .cat-Medical { background:#ffc0c0; }
+    .cat-Other { background:#eaeaea; }
+
+    .kind { font-size: 11px; font-weight: bold; opacity: 0.75; }
   </style>
 </head>
 <body>
@@ -59,35 +48,46 @@
       <div style="margin-top:6px;"><a href="{{ url_for('dashboard') }}">Dashboard</a> · <a href="{{ url_for('logout') }}">Logout</a></div>
     </div>
   </div>
-    <div class="week-nav">
-        <a href="{{ url_for('timetable', child_id=selected_child_id, week=prev_week.strftime('%Y-%m-%d')) }}"> Previous week</a>
-          <a class="active" href="{{ url_for('timetable', child_id=selected_child_id) }}">
-                This week
-          </a>
 
-         <a href="{{ url_for('timetable', child_id=selected_child_id, week=next_week.strftime('%Y-%m-%d')) }}">
-                Next week 
-         </a>
-
-        
-    </div>
-
-
+  <div class="week-nav">
+    <a href="{{ url_for('timetable', child_id=selected_child_id, week=prev_week.strftime('%Y-%m-%d')) }}">Previous week</a>
+    <a class="active" href="{{ url_for('timetable', child_id=selected_child_id) }}">This week</a>
+    <a href="{{ url_for('timetable', child_id=selected_child_id, week=next_week.strftime('%Y-%m-%d')) }}">Next week</a>
+  </div>
 
   <div class="controls">
     <form method="get" action="/timetable">
-     
       <label class="muted">Select child</label>
       <input type="hidden" name="week" value="{{ start_of_week.strftime('%Y-%m-%d') }}">
-      
       <select name="child_id">
         {% for c in children %}
-          <option value="{{ c.id }}" {% if c.id == selected_child_id %}selected{% endif %}>
-            {{ c.name }}
-          </option>
+          <option value="{{ c.id }}" {% if c.id == selected_child_id %}selected{% endif %}>{{ c.name }}</option>
         {% endfor %}
       </select>
       <button type="submit">View timetable</button>
+    </form>
+
+    <hr style="margin:16px 0; border:none; border-top:1px solid #eee;">
+
+    <form method="post" action="/add_event">
+      <div class="muted">Add timetable event</div>
+
+      <input type="hidden" name="child_id" value="{{ selected_child_id }}">
+      <input type="hidden" name="week" value="{{ start_of_week.strftime('%Y-%m-%d') }}">
+
+      <input name="title" placeholder="Title (eg Piano lesson)" required>
+      <input type="datetime-local" name="start_time" required>
+
+      <select name="category">
+        <option value="Diet">Diet</option>
+        <option value="Sleep">Sleep</option>
+        <option value="Behaviour">Behaviour</option>
+        <option value="Medical">Medical</option>
+        <option value="Other" selected>Other</option>
+      </select>
+
+      <textarea name="notes" placeholder="Notes (optional)"></textarea>
+      <button type="submit">Add event</button>
     </form>
   </div>
 
@@ -105,11 +105,19 @@
         {% for d in range(7) %}
           <td>
             {% set cell = grid.get((d, hour), []) %}
-            {% for log in cell %}
-              <div class="entry">
-                <strong>{{ log.category }}</strong>
-                <div class="muted">{{ log.carer_name }} · {{ log.timestamp.strftime("%H:%M") }}</div>
-                <div>{{ log.notes }}</div>
+            {% for item in cell %}
+              <div class="entry cat-{{ item.category }}">
+                {% if item.kind == "event" %}
+                  <div class="kind">EVENT</div>
+                  <strong>{{ item.title }}</strong>
+                  <div class="muted">{{ item.category }} · {{ item.time.strftime("%H:%M") }}</div>
+                  {% if item.notes %}<div>{{ item.notes }}</div>{% endif %}
+                {% else %}
+                  <div class="kind">LOG</div>
+                  <strong>{{ item.category }}</strong>
+                  <div class="muted">{{ item.carer }} · {{ item.time.strftime("%H:%M") }}</div>
+                  <div>{{ item.notes }}</div>
+                {% endif %}
               </div>
             {% endfor %}
           </td>
@@ -120,3 +128,5 @@
 
 </body>
 </html>
+
+

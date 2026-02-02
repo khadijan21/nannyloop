@@ -91,3 +91,28 @@ class InviteCode(db.Model):
         if self.expires_at is not None and datetime.utcnow() > self.expires_at:
             return False
         return True
+
+        from datetime import datetime
+
+
+class ScheduleItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+
+    household_id = db.Column(db.Integer, db.ForeignKey("household.id"), nullable=False)
+    child_id = db.Column(db.Integer, db.ForeignKey("child.id"), nullable=False)
+
+
+    title = db.Column(db.String(200), nullable=False)
+    category = db.Column(db.String(50), nullable=False, default="Other")
+    notes = db.Column(db.Text, nullable=True)
+
+
+    start_time = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+
+    # optional, but useful later
+    created_by_user_id = db.Column(db.Integer, nullable=True)
+    
+
