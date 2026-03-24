@@ -109,10 +109,14 @@ class ScheduleItem(db.Model):
 
 
     start_time = db.Column(db.DateTime, nullable=False)
+    rrule = db.Column(db.String(300), nullable=True)  # e.g. "FREQ=DAILY;INTERVAL=1"
+    repeat_until = db.Column(db.DateTime, nullable=True)
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
 
 
-    # optional, but useful later
+    
     created_by_user_id = db.Column(db.Integer, nullable=True)
     
 
