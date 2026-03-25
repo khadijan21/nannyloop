@@ -92,7 +92,7 @@ class InviteCode(db.Model):
             return False
         return True
 
-        from datetime import datetime
+
 
 
 class ScheduleItem(db.Model):
@@ -118,5 +118,7 @@ class ScheduleItem(db.Model):
 
     
     created_by_user_id = db.Column(db.Integer, nullable=True)
+
+    is_deleted = db.Column(db.Boolean, default=False, nullable=False)
     
 
