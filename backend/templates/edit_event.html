@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Edit Event</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      margin: 40px;
+    }
+
+    .box {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 650px;
+    }
+
+    input, select, textarea, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      box-sizing: border-box;
+    }
+
+    textarea {
+      min-height: 90px;
+    }
+
+    button {
+      background: #e643e6c9;
+      color: white;
+      border: 0;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+
+    .msg {
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      background: #fff8d6;
+    }
+
+    .links {
+      margin-top: 14px;
+    }
+
+    a {
+      color: #333;
+      text-decoration: none;
+    }
+
+    .muted {
+      color: #666;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>Edit timetable event</h1>
+    <div class="muted">Update the event details below.</div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="msg">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="post" action="{{ url_for('update_event', event_id=event.id) }}">
+        <input type="hidden" name="week" value="{{ week }}">
+        <input
+            name="title"
+            value="{{ event.title }}"
+            placeholder="Title"
+            required
+      >
+
+      <input
+        type="datetime-local"
+        name="start_time"
+        value="{{ event.start_time.strftime('%Y-%m-%dT%H:%M') }}"
+        required
+      >
+
+      <select name="category">
+        <option value="Diet" {% if event.category == "Diet" %}selected{% endif %}>Diet</option>
+        <option value="Sleep" {% if event.category == "Sleep" %}selected{% endif %}>Sleep</option>
+        <option value="Behaviour" {% if event.category == "Behaviour" %}selected{% endif %}>Behaviour</option>
+        <option value="Medical" {% if event.category == "Medical" %}selected{% endif %}>Medical</option>
+        <option value="Other" {% if event.category == "Other" %}selected{% endif %}>Other</option>
+      </select>
+
+      <textarea name="notes" placeholder="Notes (optional)">{{ event.notes or "" }}</textarea>
+
+      <button type="submit">Save changes</button>
+    </form>
+
+    <div class="links">
+      <a href="{{ url_for('timetable', child_id=event.child_id) }}">Back to timetable</a>
+    </div>
+  </div>
+</body>
+</html>
+

@@ -1,4 +1,5 @@
 # backend/app.py
+from asyncio import events
 import os
 from functools import wraps
 from datetime import datetime, timedelta, timezone
@@ -183,19 +184,48 @@ def add_event():
     category = request.form.get("category", "Other").strip()
     notes = request.form.get("notes", "").strip()
     when_raw = request.form.get("start_time", "").strip()
+    repeat_type = request.form.get("repeat_type", "").strip()
+    repeat_until_raw = request.form.get("repeat_until", "").strip()
+
     if not child_id or not title or not when_raw:
         flash("Please fill in title and time.", "error")
         return redirect(url_for("timetable", child_id=child_id, week=week) if child_id else url_for("timetable"))
+
     child = Child.query.filter_by(id=child_id, household_id=current_user.household_id).first()
     if not child:
         flash("Invalid child selected.", "error")
         return redirect(url_for("timetable"))
+
     try:
-        # datetime-local gives "YYYY-MM-DDTHH:MM"
         start_time = datetime.strptime(when_raw, "%Y-%m-%dT%H:%M")
     except ValueError:
         flash("Invalid date/time format.", "error")
         return redirect(url_for("timetable", child_id=child_id, week=week))
+
+    repeat_until = None
+    rrule = None
+
+    if repeat_type:
+        if repeat_type == "daily":
+            rrule = "FREQ=DAILY"
+        elif repeat_type == "weekly":
+            rrule = "FREQ=WEEKLY"
+        else:
+            flash("Invalid repeat option.", "error")
+            return redirect(url_for("timetable", child_id=child_id, week=week))
+
+        if repeat_until_raw:
+            try:
+                repeat_until_date = datetime.strptime(repeat_until_raw, "%Y-%m-%d")
+                repeat_until = repeat_until_date.replace(hour=23, minute=59, second=59)
+            except ValueError:
+                flash("Invalid repeat until date.", "error")
+                return redirect(url_for("timetable", child_id=child_id, week=week))
+
+            if repeat_until < start_time:
+                flash("Repeat until date must be after the start time.", "error")
+                return redirect(url_for("timetable", child_id=child_id, week=week))
+
     item = ScheduleItem(
         household_id=current_user.household_id,
         child_id=child_id,
@@ -203,16 +233,21 @@ def add_event():
         category=category,
         notes=notes if notes else None,
         start_time=start_time,
+        rrule=rrule,
+        repeat_until=repeat_until,
         created_by_user_id=current_user.id,
-       #is_deleted = db.Column(db.Boolean, default=False, nullable=False)
     )
+
     db.session.add(item)
     db.session.commit()
+
     flash("Timetable event added.", "success")
     return redirect(url_for("timetable", child_id=child_id, week=week))
 @app.route("/delete_event/<int:event_id>", methods=["POST"])
 @login_required
 def delete_event(event_id):
+    week = request.form.get("week", "").strip()
+
     event = ScheduleItem.query.filter_by(
         id=event_id,
         household_id=current_user.household_id,
@@ -228,11 +263,13 @@ def delete_event(event_id):
     db.session.commit()
 
     flash("Event deleted.", "success")
-    return redirect(url_for("timetable", child_id=child_id))
+    return redirect(url_for("timetable", child_id=child_id, week=week))
 
 @app.route("/undo_delete_event/<int:event_id>", methods=["POST"])
 @login_required
 def undo_delete_event(event_id):
+    week = request.form.get("week", "").strip()
+
     event = ScheduleItem.query.filter_by(
         id=event_id,
         household_id=current_user.household_id,
@@ -248,7 +285,65 @@ def undo_delete_event(event_id):
     db.session.commit()
 
     flash("Event restored.", "success")
-    return redirect(url_for("timetable", child_id=child_id))
+    return redirect(url_for("timetable", child_id=child_id, week=week))
+
+@app.route("/edit_event/<int:event_id>", methods=["GET"])
+@login_required
+def edit_event(event_id):
+    week = request.args.get("week", "").strip()
+
+    event = ScheduleItem.query.filter_by(
+        id=event_id,
+        household_id=current_user.household_id,
+        is_deleted=False
+    ).first()
+
+    if not event:
+        flash("Event not found.", "error")
+        return redirect(url_for("timetable"))
+
+    return render_template("edit_event.html", event=event, week=week)
+
+
+@app.route("/update_event/<int:event_id>", methods=["POST"])
+@login_required
+def update_event(event_id):
+    week = request.form.get("week", "").strip()
+
+    event = ScheduleItem.query.filter_by(
+        id=event_id,
+        household_id=current_user.household_id,
+        is_deleted=False
+    ).first()
+
+    if not event:
+        flash("Event not found.", "error")
+        return redirect(url_for("timetable"))
+
+    title = request.form.get("title", "").strip()
+    category = request.form.get("category", "Other").strip()
+    notes = request.form.get("notes", "").strip()
+    when_raw = request.form.get("start_time", "").strip()
+
+    if not title or not when_raw:
+        flash("Title and time are required.", "error")
+        return redirect(url_for("edit_event", event_id=event.id, week=week))
+
+    try:
+        start_time = datetime.strptime(when_raw, "%Y-%m-%dT%H:%M")
+    except ValueError:
+        flash("Invalid date/time format.", "error")
+        return redirect(url_for("edit_event", event_id=event.id, week=week))
+
+    event.title = title
+    event.category = category
+    event.notes = notes if notes else None
+    event.start_time = start_time
+
+    db.session.commit()
+
+    flash("Event updated.", "success")
+    return redirect(url_for("timetable", child_id=event.child_id, week=week))
 
 
 
@@ -296,7 +391,6 @@ def timetable():
             child_id=selected_child.id,
             is_deleted=False
         )
-        .filter(ScheduleItem.start_time >= start_of_week, ScheduleItem.start_time < end_of_week)
         .order_by(ScheduleItem.start_time.asc())
         .all()
     )
@@ -324,17 +418,39 @@ def timetable():
             hour_slot = 20
         return hour_slot
     for ev in events:
-        dt = ev.start_time
-        day_index = (dt.date() - start_of_week.date()).days
-        if 0 <= day_index <= 6:
-            grid.setdefault((day_index, slot_for(dt)), []).append({
-                "id": ev.id,
-                "kind": "event",
-                "category": ev.category,
-                "time": dt,
-                "title": ev.title,
-                "notes": ev.notes or "",
-            })
+        event_times = []
+
+        if not ev.rrule:
+            if start_of_week <= ev.start_time < end_of_week:
+                event_times.append(ev.start_time)
+
+        elif ev.rrule == "FREQ=DAILY":
+            current_dt = ev.start_time
+            while current_dt < end_of_week:
+                if current_dt >= start_of_week:
+                    if ev.repeat_until is None or current_dt <= ev.repeat_until:
+                        event_times.append(current_dt)
+                current_dt += timedelta(days=1)
+
+        elif ev.rrule == "FREQ=WEEKLY":
+            current_dt = ev.start_time
+            while current_dt < end_of_week:
+                if current_dt >= start_of_week:
+                    if ev.repeat_until is None or current_dt <= ev.repeat_until:
+                        event_times.append(current_dt)
+                current_dt += timedelta(days=7)
+
+        for dt in event_times:
+            day_index = (dt.date() - start_of_week.date()).days
+            if 0 <= day_index <= 6:
+                grid.setdefault((day_index, slot_for(dt)), []).append({
+                    "id": ev.id,
+                    "kind": "event",
+                    "category": ev.category,
+                    "time": dt,
+                    "title": ev.title,
+                    "notes": ev.notes or "",
+                })
     for lg in logs:
         dt = lg.timestamp
         day_index = (dt.date() - start_of_week.date()).days

@@ -113,9 +113,17 @@
         <option value="Medical">Medical</option>
         <option value="Other" selected>Other</option>
       </select>
+
+      <select name="repeat_type">
+        <option value="">Does not repeat</option>
+        <option value="daily">Repeat daily</option>
+        <option value="weekly">Repeat weekly</option>
+      </select>
+
+      <input type="date" name="repeat_until" placeholder="Repeat until">
+
       <textarea name="notes" placeholder="Notes (optional)"></textarea>
       <button type="submit">Add event</button>
-    </form>
   {% if deleted_events %}
     <div class="controls">
       <div class="muted">Recently deleted events</div>
@@ -129,6 +137,7 @@
 
           <div class="event-actions">
             <form method="post" action="{{ url_for('undo_delete_event', event_id=ev.id) }}">
+              <input type="hidden" name="week" value="{{ start_of_week.strftime('%Y-%m-%d') }}">
               <button type="submit" class="small-btn edit-btn">Undo delete</button>
             </form>
           </div>
@@ -161,7 +170,13 @@
                 {% if item.notes %}<div>{{ item.notes }}</div>{% endif %}
 
                 <div class="event-actions">
+                  <form method="get" action="{{ url_for('edit_event', event_id=item.id) }}">
+                    <input type="hidden" name="week" value="{{ start_of_week.strftime('%Y-%m-%d') }}">
+                    <button type="submit" class="small-btn edit-btn">Edit</button>
+                  </form>
+
                   <form method="post" action="{{ url_for('delete_event', event_id=item.id) }}">
+                    <input type="hidden" name="week" value="{{ start_of_week.strftime('%Y-%m-%d') }}">
                     <button type="submit" class="small-btn delete-btn">Delete</button>
                   </form>
                 </div>
