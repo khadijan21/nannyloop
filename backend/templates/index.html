@@ -161,14 +161,16 @@
     </div>
   {% endif %}
 
-  <div class="box">
-    <h2>Add Child</h2>
-    <form action="{{ url_for('add_child') }}" method="post">
-      <input type="text" name="name" placeholder="Child name" required>
-      <input type="text" name="dob" placeholder="Date of Birth (eg 12/03/2022)" required>
-      <button type="submit">Add Child</button>
-    </form>
-  </div>
+  {% if current_user.role == "parent" %}
+    <div class="box">
+      <h2>Add Child</h2>
+      <form action="{{ url_for('add_child') }}" method="post">
+        <input type="text" name="name" placeholder="Child name" required>
+        <input type="text" name="dob" placeholder="Date of Birth (eg 12/03/2022)" required>
+        <button type="submit">Add Child</button>
+      </form>
+    </div>
+  {% endif %}
 
   <div class="box">
     <h2>Add Log Entry</h2>

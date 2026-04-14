@@ -274,6 +274,7 @@ def build_weekly_summary(child_name, logs):
 
 @app.route("/add_child", methods=["POST"])
 @login_required
+@role_required("parent")
 def add_child():
     name = request.form["name"].strip()
     dob = request.form["dob"].strip()
