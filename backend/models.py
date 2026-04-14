@@ -120,5 +120,31 @@ class ScheduleItem(db.Model):
     created_by_user_id = db.Column(db.Integer, nullable=True)
 
     is_deleted = db.Column(db.Boolean, default=False, nullable=False)
+
+class ScheduleException(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    schedule_item_id = db.Column(
+        db.Integer,
+        db.ForeignKey("schedule_item.id"),
+        nullable=False
+    )
+
+    skipped_date = db.Column(db.Date, nullable=False)
+
+class AISummary(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    household_id = db.Column(db.Integer, db.ForeignKey("household.id"), nullable=False)
+    child_id = db.Column(db.Integer, db.ForeignKey("child.id"), nullable=False)
+
+    summary_text = db.Column(db.Text, nullable=False)
+
+    week_start = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    child = db.relationship("Child", backref="ai_summaries")
+
+
     
 

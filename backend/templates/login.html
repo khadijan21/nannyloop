@@ -1,17 +1,57 @@
-# backend/templates/login.html 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>NannyLoop - Login</title>
   <style>
-    body { font-family: Arial, sans-serif; background:#f5f5f5; margin:40px; }
-    .box { background:white; padding:20px; border-radius:10px; max-width:520px; }
-    input, button { width:100%; padding:10px; margin-top:10px; }
-    button { background:#e643e6c9; color:white; border:none; cursor:pointer; }
-    button:hover { background:#e643e6c9; }
-    .links { margin-top:14px; }
-    .msg { margin-top:10px; padding:10px; border-radius:8px; background:#ffe7e7; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f6fa;
+      margin: 0;
+    }
+
+    .box {
+      background: white;
+      padding: 28px;
+      border-radius: 12px;
+      max-width: 520px;
+      margin: 90px auto;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      box-sizing: border-box;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      font-family: inherit;
+    }
+
+    button {
+      background: linear-gradient(to right, #d16ba5, #c777b9);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .links {
+      margin-top: 16px;
+    }
+
+    .msg {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 8px;
+      background: #ffe7e7;
+    }
+
+    a {
+      color: #333;
+    }
   </style>
 </head>
 <body>

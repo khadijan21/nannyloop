@@ -6,39 +6,143 @@
   <meta charset="UTF-8">
   <title>NannyLoop - Weekly Timetable</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
-    .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
-    .pill { background:white; padding:10px 14px; border-radius: 8px; }
-    a { color:#333; text-decoration:none; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f5f6fa;
+      color: #222;
+    }
 
-    .week-nav { margin-bottom: 14px; }
-    .week-nav a { display:inline-block; padding:8px 14px; border-radius:8px; background:#f1f1f1; margin-right:6px; }
-    .week-nav a.active { background:#e643e6c9; color:white; }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px;
+    }
 
-    .controls { background:white; padding:14px; border-radius:10px; margin-bottom:18px; }
-    select, button, input, textarea { padding:10px; width:100%; margin-top:10px; box-sizing:border-box; }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
 
-    textarea { min-height: 70px; }
-    table { width:100%; border-collapse: collapse; background:white; border-radius: 10px; overflow:hidden; }
-    th, td { border:1px solid #eee; padding:10px; vertical-align: top; }
-    th { background:#21b11c9c; text-align:left; }
+    .pill {
+      background: white;
+      padding: 14px 16px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
 
-    .timecell { width:90px; font-weight:bold; background:#fafafa; }
-    .entry { padding:8px; border-radius:8px; margin-bottom:8px; }
-    .muted { color:#666; font-size: 12px; }
+    a {
+      color: #333;
+      text-decoration: none;
+    }
 
-    .cat-Diet { background:#bff3bf; }
-    .cat-Sleep { background:#c7d7ff; }
-    .cat-Behaviour { background:#ffe3b5; }
-    .cat-Medical { background:#ffc0c0; }
-    .cat-Other { background:#eaeaea; }
+    .week-nav {
+      margin-bottom: 18px;
+    }
 
-    .kind { font-size: 11px; font-weight: bold; opacity: 0.75; }
+    .week-nav a {
+      display: inline-block;
+      padding: 10px 16px;
+      border-radius: 8px;
+      background: #f1f1f1;
+      margin-right: 8px;
+    }
+
+    .week-nav a.active {
+      background: #d16ba5;
+      color: white;
+    }
+
+    .controls {
+      background: white;
+      padding: 18px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    select, button, input, textarea {
+      padding: 10px;
+      width: 100%;
+      margin-top: 10px;
+      box-sizing: border-box;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      font-family: inherit;
+    }
+
+    textarea {
+      min-height: 80px;
+    }
+
+    button {
+      background: linear-gradient(to right, #d16ba5, #c777b9);
+      color: white;
+      border: 0;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      opacity: 0.92;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    th, td {
+      border: 1px solid #eee;
+      padding: 10px;
+      vertical-align: top;
+    }
+
+    th {
+      background: #98c883;
+      text-align: left;
+    }
+
+    .timecell {
+      width: 90px;
+      font-weight: bold;
+      background: #fafafa;
+    }
+
+    .entry {
+      padding: 10px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+    }
+
+    .muted {
+      color: #666;
+      font-size: 12px;
+    }
+
+    .cat-Diet { background: #bff3bf; }
+    .cat-Sleep { background: #c7d7ff; }
+    .cat-Behaviour { background: #ffe3b5; }
+    .cat-Medical { background: #ffc0c0; }
+    .cat-Other { background: #eaeaea; }
+
+    .kind {
+      font-size: 11px;
+      font-weight: bold;
+      opacity: 0.75;
+    }
 
     .event-actions {
       margin-top: 8px;
       display: flex;
       gap: 6px;
+      flex-wrap: wrap;
     }
 
     .event-actions form {
@@ -48,13 +152,14 @@
 
     .small-btn {
       width: auto;
-      padding: 6px 10px;
+      padding: 7px 12px;
       margin-top: 0;
       border: 0;
-      border-radius: 6px;
+      border-radius: 8px;
       color: white;
       cursor: pointer;
       font-size: 12px;
+      font-weight: bold;
     }
 
     .delete-btn {
@@ -64,87 +169,99 @@
     .edit-btn {
       background: #777;
     }
-
-
   </style>
 
 </head>
 <body>
-  <div class="topbar">
-    <div>
-      <h1 style="margin:0;">Weekly Timetable</h1>
-      <div class="muted">Week starting: {{ start_of_week.strftime("%d %b %Y") }}</div>
+  <div class="container">
+
+    <div class="topbar">
+      <div>
+        <h1 style="margin:0;">Weekly Timetable</h1>
+        <div class="muted">Week starting: {{ start_of_week.strftime("%d %b %Y") }}</div>
+      </div>
+      <div class="pill">
+        <div class="muted">Logged in as</div>
+        <div><strong>{{ current_user.email }}</strong> ({{ current_user.role }})</div>
+        <div style="margin-top:6px;"><a href="{{ url_for('dashboard') }}">Dashboard</a> · <a href="{{ url_for('logout') }}">Logout</a></div>
+      </div>
     </div>
-    <div class="pill">
-      <div class="muted">Logged in as</div>
-      <div><strong>{{ current_user.email }}</strong> ({{ current_user.role }})</div>
-      <div style="margin-top:6px;"><a href="{{ url_for('dashboard') }}">Dashboard</a> · <a href="{{ url_for('logout') }}">Logout</a></div>
+
+    <div class="week-nav">
+      <a href="{{ url_for('timetable', child_id=selected_child_id, week=prev_week.strftime('%Y-%m-%d')) }}">Previous week</a>
+      <a class="active" href="{{ url_for('timetable', child_id=selected_child_id) }}">This week</a>
+      <a href="{{ url_for('timetable', child_id=selected_child_id, week=next_week.strftime('%Y-%m-%d')) }}">Next week</a>
     </div>
-  </div>
 
-  <div class="week-nav">
-    <a href="{{ url_for('timetable', child_id=selected_child_id, week=prev_week.strftime('%Y-%m-%d')) }}">Previous week</a>
-    <a class="active" href="{{ url_for('timetable', child_id=selected_child_id) }}">This week</a>
-    <a href="{{ url_for('timetable', child_id=selected_child_id, week=next_week.strftime('%Y-%m-%d')) }}">Next week</a>
-  </div>
-
-  <div class="controls">
-    <form method="get" action="/timetable">
-      <label class="muted">Select child</label>
-      <input type="hidden" name="week" value="{{ start_of_week.strftime('%Y-%m-%d') }}">
-      <select name="child_id">
-        {% for c in children %}
-          <option value="{{ c.id }}" {% if c.id == selected_child_id %}selected{% endif %}>{{ c.name }}</option>
-        {% endfor %}
-      </select>
-      <button type="submit">View timetable</button>
-    </form>
-    <hr style="margin:16px 0; border:none; border-top:1px solid #eee;">
-    <form method="post" action="/add_event">
-      <div class="muted">Add timetable event</div>
-      <input type="hidden" name="child_id" value="{{ selected_child_id }}">
-      <input type="hidden" name="week" value="{{ start_of_week.strftime('%Y-%m-%d') }}">
-      <input name="title" placeholder="Title (eg Piano lesson)" required>
-      <input type="datetime-local" name="start_time" required>
-      <select name="category">
-        <option value="Diet">Diet</option>
-        <option value="Sleep">Sleep</option>
-        <option value="Behaviour">Behaviour</option>
-        <option value="Medical">Medical</option>
-        <option value="Other" selected>Other</option>
-      </select>
-
-      <select name="repeat_type">
-        <option value="">Does not repeat</option>
-        <option value="daily">Repeat daily</option>
-        <option value="weekly">Repeat weekly</option>
-      </select>
-
-      <input type="date" name="repeat_until" placeholder="Repeat until">
-
-      <textarea name="notes" placeholder="Notes (optional)"></textarea>
-      <button type="submit">Add event</button>
-  {% if deleted_events %}
     <div class="controls">
-      <div class="muted">Recently deleted events</div>
+      <form method="get" action="/timetable">
+        <label class="muted">Select child</label>
+        <input type="hidden" name="week" value="{{ start_of_week.strftime('%Y-%m-%d') }}">
+        <select name="child_id">
+          {% for c in children %}
+            <option value="{{ c.id }}" {% if c.id == selected_child_id %}selected{% endif %}>{{ c.name }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit">View timetable</button>
+      </form>
+      <hr style="margin:16px 0; border:none; border-top:1px solid #eee;">
+      <form method="post" action="/add_event">
+        <div class="muted">Add timetable event</div>
+        <input type="hidden" name="child_id" value="{{ selected_child_id }}">
+        <input type="hidden" name="week" value="{{ start_of_week.strftime('%Y-%m-%d') }}">
+        <input name="title" placeholder="Title (eg Piano lesson)" required>
+        <input type="datetime-local" name="start_time" required>
+        <select name="category">
+          <option value="Diet">Diet</option>
+          <option value="Sleep">Sleep</option>
+          <option value="Behaviour">Behaviour</option>
+          <option value="Medical">Medical</option>
+          <option value="Other" selected>Other</option>
+        </select>
 
-      {% for ev in deleted_events %}
-        <div class="entry cat-{{ ev.category }}" style="margin-top:10px;">
-          <div class="kind">DELETED EVENT</div>
-          <strong>{{ ev.title }}</strong>
-          <div class="muted">{{ ev.category }} · {{ ev.start_time.strftime("%d %b %Y %H:%M") }}</div>
-          {% if ev.notes %}<div>{{ ev.notes }}</div>{% endif %}
+        <label class="muted">How often should this repeat?</label>
+        <select name="repeat_type">
+          <option value="">Does not repeat</option>
+          <option value="daily">Repeat daily</option>
+          <option value="weekly">Repeat weekly</option>
+        </select>
 
-          <div class="event-actions">
-            <form method="post" action="{{ url_for('undo_delete_event', event_id=ev.id) }}">
-              <input type="hidden" name="week" value="{{ start_of_week.strftime('%Y-%m-%d') }}">
-              <button type="submit" class="small-btn edit-btn">Undo delete</button>
-            </form>
-          </div>
+        <label class="muted">Repeat until (leave blank for no end date)</label>
+        <div class="muted">The repeating event will stop after this date.</div>
+        <input type="date" name="repeat_until">
+
+
+        <textarea name="notes" placeholder="Notes (optional)"></textarea>
+        <button type="submit">Add event</button>
+      </form>
+
+      {% if deleted_events %}
+        <div class="controls">
+          <div class="muted">Recently deleted events</div>
+
+          {% for ev in deleted_events %}
+            <div class="entry cat-{{ ev.category }}" style="margin-top:10px;">
+              <div class="kind">DELETED EVENT</div>
+              <strong>{{ ev.title }}</strong>
+              <div class="muted">{{ ev.category }} · {{ ev.start_time.strftime("%d %b %Y %H:%M") }}</div>
+              {% if ev.notes %}<div>{{ ev.notes }}</div>{% endif %}
+
+              <div class="event-actions">
+                <form method="post" action="{{ url_for('undo_delete_event', event_id=ev.id) }}">
+                  <input type="hidden" name="week" value="{{ start_of_week.strftime('%Y-%m-%d') }}">
+                  <button type="submit" class="small-btn edit-btn">Undo</button>
+                </form>
+
+                <form method="post" action="{{ url_for('delete_event_permanently', event_id=ev.id) }}">
+                  <input type="hidden" name="week" value="{{ start_of_week.strftime('%Y-%m-%d') }}">
+                  <button type="submit" class="small-btn delete-btn">Delete forever</button>
+                </form>
+              </div>
+            </div>
+          {% endfor %}
         </div>
-      {% endfor %}
-    </div>
-  {% endif %}
+      {% endif %}
+      
 
 
   </div>
@@ -175,12 +292,27 @@
                     <button type="submit" class="small-btn edit-btn">Edit</button>
                   </form>
 
-                  <form method="post" action="{{ url_for('delete_event', event_id=item.id) }}">
-                    <input type="hidden" name="week" value="{{ start_of_week.strftime('%Y-%m-%d') }}">
-                    <button type="submit" class="small-btn delete-btn">Delete</button>
-                  </form>
+                  {% if item.rrule %}
+                    <form method="post" action="{{ url_for('delete_event_occurrence', event_id=item.id) }}">
+                      <input type="hidden" name="week" value="{{ start_of_week.strftime('%Y-%m-%d') }}">
+                      <input type="hidden" name="occurrence_date" value="{{ item.occurrence_date }}">
+                      <button type="submit" class="small-btn delete-btn">Delete this one</button>
+                    </form>
+
+                    <form method="post" action="{{ url_for('delete_event', event_id=item.id) }}">
+                      <input type="hidden" name="week" value="{{ start_of_week.strftime('%Y-%m-%d') }}">
+                      <button type="submit" class="small-btn delete-btn">Delete series</button>
+                    </form>
+                  {% else %}
+                    <form method="post" action="{{ url_for('delete_event', event_id=item.id) }}">
+                      <input type="hidden" name="week" value="{{ start_of_week.strftime('%Y-%m-%d') }}">
+                      <button type="submit" class="small-btn delete-btn">Delete</button>
+                    </form>
+                  {% endif %}
                 </div>
-              {% else %}
+                {% else %}
+
+
 
 
                   <div class="kind">LOG</div>
@@ -195,5 +327,6 @@
       </tr>
     {% endfor %}
   </table>
+  </div>
 </body>
 </html>
